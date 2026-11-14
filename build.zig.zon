@@ -8,10 +8,6 @@
             .url = "https://github.com/vrischmann/zig-sqlite/archive/refs/heads/zig-0.15.2.tar.gz",
             .hash = "sqlite-3.48.0-F2R_a8eODgCnwT0ssaQUTNrsbDeDOtmuOPzF33cgvN13",
         },
-        .sqlite3 = .{
-            .url = "https://www.sqlite.org/2025/sqlite-amalgamation-3480000.zip",
-            .hash = "N-V-__8AACpFpwCXJZXXDaM9adUZOSdCSCy5dik1zsuZkk4x",
-        },
     },
     .paths = .{ "build.zig", "build.zig.zon", "src" },
 }
