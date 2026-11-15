@@ -29,25 +29,6 @@ pub fn range(db: *Database, from_ts: i64, to_ts: i64, allocator: std.mem.Allocat
     return try stmt.all(Event, allocator, .{}, .{ from_ts, to_ts });
 }
 
-test "append and range query" {
-    const allocator = std.testing.allocator;
-    var db = try @import("sqlite.zig").open(allocator, ":memory:");
-    defer db.deinit();
-    try migrate(&db);
-
-    _ = try append(&db, 100, "ingest", "doc-1");
-    _ = try append(&db, 200, "ingest", "doc-2");
-    _ = try append(&db, 300, "recall", "query-1");
-
-    const evs = try range(&db, 150, 350, allocator);
-    defer {
-        for (evs) |e| {
-            allocator.free(e.kind);
-            allocator.free(e.payload);
-        }
-        allocator.free(evs);
-    }
-    try std.testing.expectEqual(2, evs.len);
-    try std.testing.expect(evs[0].timestamp == 200);
-    try std.testing.expect(evs[1].timestamp == 300);
+test {
+    _ = @import("timeseries_test.zig");
 }

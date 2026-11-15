@@ -62,19 +62,6 @@ pub fn cosineSimilarity(a: []align(1) const f32, b: []align(1) const f32) f32 {
     return dot / (std.math.sqrt(na) * std.math.sqrt(nb));
 }
 
-test "flat cosine search" {
-    const allocator = std.testing.allocator;
-    var db = try @import("sqlite.zig").open(allocator, ":memory:");
-    defer db.deinit();
-    try migrate(&db);
-
-    try insertVector(&db, 1, &[_]f32{ 1, 0, 0 });
-    try insertVector(&db, 2, &[_]f32{ 0, 1, 0 });
-    try insertVector(&db, 3, &[_]f32{ 1, 1, 0 });
-
-    const top = try search(&db, &[_]f32{ 1, 0, 0 }, 2, allocator);
-    defer allocator.free(top);
-    try std.testing.expectEqual(2, top.len);
-    try std.testing.expect(top[0].chunk_id == 1);
-    try std.testing.expect(top[0].score > top[1].score);
+test {
+    _ = @import("vector_test.zig");
 }
