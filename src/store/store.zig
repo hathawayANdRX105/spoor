@@ -19,6 +19,8 @@ pub fn openDatabase(allocator: std.mem.Allocator, path: []const u8) !Database {
     errdefer db.deinit();
     try truth.migrate(&db);
     try graph.migrate(&db);
+    try vector.migrate(&db);
+    try timeseries.migrate(&db);
     return db;
 }
 
