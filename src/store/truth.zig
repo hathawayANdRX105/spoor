@@ -52,6 +52,11 @@ pub fn selectDocument(db: *Database, allocator: std.mem.Allocator, id: u64) !?Do
     return try db.oneDynamicAlloc(Document, allocator, "SELECT id, title FROM documents WHERE id = ?", .{}, .{id});
 }
 
+/// 按 id 查单个 chunk，未找到返回 null。
+pub fn selectChunk(db: *Database, allocator: std.mem.Allocator, id: u64) !?Chunk {
+    return try db.oneDynamicAlloc(Chunk, allocator, "SELECT id, document_id, text FROM chunks WHERE id = ?", .{}, .{id});
+}
+
 /// 按 document_id 查该文档的全部块，按 id 升序。
 pub fn selectChunksByDocument(db: *Database, document_id: u64, allocator: std.mem.Allocator) ![]Chunk {
     var stmt = try db.prepareDynamic("SELECT id, document_id, text FROM chunks WHERE document_id = ? ORDER BY id");
