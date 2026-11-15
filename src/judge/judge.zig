@@ -61,10 +61,8 @@ pub fn rerank(
     if (total_chars > MAX_RERANK_TOTAL_CHARS) return Error.InvalidResponse;
 
     // 组 jev 请求体
-    var body: std.ArrayList(u8) = .empty;
-    defer body.deinit(allocator);
-    var w = std.Io.Writer.Allocating.fromArrayList(allocator, &body);
-    defer _ = w.toOwnedSlice() catch {};
+    var w = std.Io.Writer.Allocating.init(allocator);
+    defer w.deinit();
 
     try w.writer.print("{{\"model\":\"{s}\",\"state\":{{\"query\":", .{config.model});
     try jsonEscape(&w.writer, query);
@@ -79,7 +77,9 @@ pub fn rerank(
     try w.writer.writeAll("}}");
 
     // HTTP POST
-    const response_body = try post(allocator, io, config, body.items);
+    const body_json = try w.toOwnedSlice();
+    defer allocator.free(body_json);
+    const response_body = try post(allocator, io, config, body_json);
     defer allocator.free(response_body);
 
     // 解析 answers
@@ -118,7 +118,9 @@ pub fn rerank(
             else => return Error.InvalidResponse,
         };
         if (!std.math.isFinite(noul) or noul < 0.0 or noul > 1.0) return Error.InvalidResponse;
-        try hits.append(allocator, .{ .id = cand.id, .relevance = noul });
+        const hit_id = try allocator.dupe(u8, cand.id);
+        errdefer allocator.free(hit_id);
+        try hits.append(allocator, .{ .id = hit_id, .relevance = noul });
     }
 
     // relevance 降序
@@ -295,7 +297,9 @@ pub const Mock = struct {
 
         for (candidates, 0..) |cand, i| {
             const rel = mockRelevance(query, cand.text);
-            try hits.append(allocator, .{ .id = cand.id, .relevance = rel });
+            const hit_id = try allocator.dupe(u8, cand.id);
+            errdefer allocator.free(hit_id);
+            try hits.append(allocator, .{ .id = hit_id, .relevance = rel });
             _ = i;
         }
         std.mem.sort(Hit, hits.items, {}, struct {
