@@ -18,6 +18,7 @@ pub fn openDatabase(allocator: std.mem.Allocator, path: []const u8) !Database {
     var db = try sqlite.open(allocator, path);
     errdefer db.deinit();
     try truth.migrate(&db);
+    try graph.migrate(&db);
     return db;
 }
 
