@@ -16,7 +16,7 @@ pub const Match = struct {
 /// 建立全文索引 schema（幂等）：external-content FTS5 表 + 同步触发器。
 pub fn migrate(db: *Database) !void {
     try db.execDynamic(
-        "CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(text, content='chunks', content_rowid='id');",
+        "CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(text, content='chunks', content_rowid='id', tokenize='trigram');",
         .{}, .{},
     );
     try db.execDynamic(

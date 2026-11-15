@@ -14,7 +14,10 @@ test "mock rerank orders by relevance" {
         .{ .id = "c", .text = "transformer scaling laws" },
     };
     const hits = try Mock.rerank(allocator, .{}, "transformer", &candidates);
-    defer allocator.free(hits);
+    defer {
+        for (hits) |h| allocator.free(h.id);
+        allocator.free(hits);
+    }
     // a 与 c 含 transformer（relevance 1.0），b 不含（0.0）
     try std.testing.expectEqual(3, hits.len);
     try std.testing.expect(hits[0].id[0] == 'a' or hits[0].id[0] == 'c');

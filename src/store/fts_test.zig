@@ -40,3 +40,23 @@ test "fts5 bm25 search over chunks" {
     }
     try std.testing.expectEqual(0, none.len);
 }
+
+test "fts5 trigram chinese substring" {
+    const allocator = std.testing.allocator;
+    var db = try @import("spoor").store.sqlite.open(allocator, ":memory:");
+    defer db.deinit();
+    try @import("spoor").store.truth.migrate(&db);
+    try impl.migrate(&db);
+
+    const doc = try @import("spoor").store.truth.insertDocument(&db, "d1");
+    _ = try @import("spoor").store.truth.insertChunk(&db, doc, "向量检索使用嵌入模型");
+    _ = try @import("spoor").store.truth.insertChunk(&db, doc, "graph traversal follows edges");
+
+    // trigram：中文 3-gram 子串查询（"向量" 是 2 字 → trigram 要求 ≥3 字符）
+    const hits = try impl.searchKeyword(&db, "向量检索", allocator);
+    defer {
+        for (hits) |h| allocator.free(h.text);
+        allocator.free(hits);
+    }
+    try std.testing.expect(hits.len >= 1);
+}

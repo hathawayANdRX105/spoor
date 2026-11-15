@@ -21,7 +21,7 @@ pub fn insertVector(db: *Database, chunk_id: u64, embedding: []const f32) !void 
 }
 
 /// flat cosine 检索：返回 top-k 最相似 chunk，按相似度降序。
-pub fn search(db: *Database, query: []const f32, k: usize, allocator: std.mem.Allocator) ![]Scored {
+pub fn search(db: *Database, query: []align(1) const f32, k: usize, allocator: std.mem.Allocator) ![]Scored {
     var stmt = try db.prepareDynamic("SELECT chunk_id, embedding FROM vectors");
     defer stmt.deinit();
     const rows = try stmt.all(struct { chunk_id: u64, embedding: []const u8 }, allocator, .{}, .{});
