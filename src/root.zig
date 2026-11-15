@@ -14,6 +14,7 @@ pub const retrieve = @import("retrieve/retrieve.zig");
 pub const websearch = @import("websearch/websearch.zig");
 pub const harness = @import("harness/harness.zig");
 pub const eval = @import("eval/eval.zig");
+pub const judge_mod = @import("judge/mod.zig");
 
 test "facade re-exports every layer" {
     _ = store;
@@ -21,4 +22,5 @@ test "facade re-exports every layer" {
     _ = websearch;
     _ = harness;
     _ = eval;
+    _ = judge_mod;
 }

@@ -1,4 +1,4 @@
-//! 词法检索臂：关键词 LIKE 匹配，返回 chunk_id 列表（按 id 升序）。
+//! 词法检索臂：FTS5 BM25 匹配，返回 chunk_id 列表（按相关度降序）。
 
 const std = @import("std");
 const spoor = @import("spoor");

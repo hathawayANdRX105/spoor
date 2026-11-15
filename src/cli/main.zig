@@ -40,7 +40,25 @@ pub fn main(init: std.process.Init) !void {
         return;
     }
 
-    try spoor.harness.agent.investigate(&db, question, allocator, init.io, init.environ_map);
+    const report = try spoor.harness.agent.investigate(&db, question, allocator, init.io, init.environ_map);
+    defer {
+        for (report.rounds) |*r| {
+            allocator.free(r.query);
+            allocator.free(r.chunk_ids);
+        }
+        allocator.free(report.rounds);
+    }
+    // 报告摘要
+    {
+        var buf: [4096]u8 = undefined;
+        var w = std.Io.File.stdout().writer(init.io, &buf);
+        try w.interface.print("调查报告：{d} 轮，judge 降级={s}，web 结果 {d} 条\n", .{
+            report.rounds.len,
+            if (report.judge_degraded) "是" else "否",
+            report.web_count,
+        });
+        w.interface.flush() catch {};
+    }
 }
 
 fn seed(db: *spoor.store.Database, io: std.Io) !void {
