@@ -1,13 +1,8 @@
 .{
     .name = .spoor,
-    .version = "0.0.0",
-    .minimum_zig_version = "0.15.2",
+    .version = "0.1.0",
+    .minimum_zig_version = "0.17.1",
     .fingerprint = 0xc8a26fb8492b4aa,
-    .dependencies = .{
-        .sqlite = .{
-            .url = "https://github.com/vrischmann/zig-sqlite/archive/refs/heads/zig-0.15.2.tar.gz",
-            .hash = "sqlite-3.48.0-F2R_a8eODgCnwT0ssaQUTNrsbDeDOtmuOPzF33cgvN13",
-        },
-    },
-    .paths = .{ "build.zig", "build.zig.zon", "src" },
+    .dependencies = .{},
+    .paths = .{ "build.zig", "build.zig.zon", "src", "vendor" },
 }

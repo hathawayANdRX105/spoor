@@ -1,15 +1,12 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    // 默认 musl：CachyOS 的 GCC 16 crt1.o 含 .sframe（R_X86_64_PC64 relocation），
-    // zig 0.15.2 的 linker 不认识；musl 用 zig 自带 crt，绕开该问题。
+    // 默认 musl：0.15.2 时代绕开 CachyOS GCC16 crt1.o 的 linker 问题；
+    // 0.17.1 已修复 linker，但 musl 静态行为保留（部署简单）。
     const target = b.standardTargetOptions(.{
         .default_target = .{ .abi = .musl },
     });
     const optimize = b.standardOptimizeOption(.{});
-
-    // vrischmann/zig-sqlite：module("sqlite") 已内置 SQLite 编译、sqlite3.h include path 与 link_libc。
-    const sqlite_dep = b.dependency("sqlite", .{ .target = target, .optimize = optimize });
 
     // 库模块 "spoor"（self-import 供库内部文件用 @import("spoor") 引用根模块）。
     const mod = b.addModule("spoor", .{
@@ -18,7 +15,18 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     mod.addImport("spoor", mod);
-    mod.addImport("sqlite", sqlite_dep.module("sqlite"));
+
+    // SQLite amalgamation（自带 vendor，编译宏可控，含 FTS5）。
+    mod.addIncludePath(b.path("vendor"));
+    mod.addCSourceFile(.{
+        .file = b.path("vendor/sqlite3.c"),
+        .flags = &.{ "-std=c99", "-DSQLITE_ENABLE_FTS5", "-DSQLITE_DQS=0" },
+    });
+    mod.addCSourceFile(.{
+        .file = b.path("vendor/workaround.c"),
+        .flags = &.{"-std=c99"},
+    });
+    mod.link_libc = true;
 
     // CLI 可执行文件。
     const exe = b.addExecutable(.{
@@ -39,7 +47,6 @@ pub fn build(b: *std.Build) void {
     const run_cmd = b.addRunArtifact(exe);
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| run_cmd.addArgs(args);
 
     const mod_tests = b.addTest(.{ .root_module = mod });
     const run_mod_tests = b.addRunArtifact(mod_tests);

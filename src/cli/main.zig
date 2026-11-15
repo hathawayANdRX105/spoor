@@ -1,16 +1,16 @@
 const std = @import("std");
 const spoor = @import("spoor");
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    // init.gpa 已带泄漏检查（debug）；init.arena 是进程级 arena。
+    const allocator = init.gpa;
 
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
+    var stdout_buf: [4096]u8 = undefined;
+    const args = try init.minimal.args.toSlice(init.arena.allocator());
 
     if (args.len < 2) {
-        try std.fs.File.stdout().deprecatedWriter().print(
+        var out_w = std.Io.File.stdout().writer(init.io, &stdout_buf);
+        try out_w.interface.print(
             \\spoor v{s} — 简化 RAG + 调查任务 harness
             \\用法：
             \\  spoor <db路径> [问题]          打开库并对问题跑一轮调查
@@ -24,7 +24,7 @@ pub fn main() !void {
         if (args.len < 3) return error.MissingDbPath;
         var db = try spoor.store.openDatabase(allocator, args[2]);
         defer db.deinit();
-        try seed(&db);
+        try seed(&db, init.io);
         return;
     }
 
@@ -35,14 +35,15 @@ pub fn main() !void {
     defer db.deinit();
 
     if (question.len == 0) {
-        try std.fs.File.stdout().deprecatedWriter().print("spoor: opened {s}（无问题，退出）\n", .{path});
+        var out_w = std.Io.File.stdout().writer(init.io, &stdout_buf);
+        try out_w.interface.print("spoor: opened {s}（无问题，退出）\n", .{path});
         return;
     }
 
-    try spoor.harness.agent.investigate(&db, question, allocator);
+    try spoor.harness.agent.investigate(&db, question, allocator, init.io, init.environ_map);
 }
 
-fn seed(db: *spoor.store.Database) !void {
+fn seed(db: *spoor.store.Database, io: std.Io) !void {
     const t = spoor.store.truth;
     const g = spoor.store.graph;
 
@@ -54,6 +55,6 @@ fn seed(db: *spoor.store.Database) !void {
     _ = try g.insertNode(db, "chunk");
     _ = try g.insertEdge(db, c1, c2, "links");
 
-    const stdout = std.fs.File.stdout().deprecatedWriter();
-    try stdout.print("已写入演示数据：doc={d} chunks={d},{d}\n", .{ d1, c1, c2 });
+    var stdout = std.Io.File.stdout().writerStreaming(io, &.{});
+    try stdout.interface.print("已写入演示数据：doc={d} chunks={d},{d}\n", .{ d1, c1, c2 });
 }

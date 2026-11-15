@@ -17,18 +17,18 @@ pub const Result = struct {
 
 /// 搜索 query，返回结果列表（title/url/snippet）。
 /// 依赖外部网络；失败时调用方应降级为仅本地检索。
-pub fn search(allocator: std.mem.Allocator, query: []const u8) ![]Result {
+pub fn search(allocator: std.mem.Allocator, io: std.Io, query: []const u8) ![]Result {
     const url = try std.fmt.allocPrint(allocator, "https://html.duckduckgo.com/html/?q={s}", .{query});
     defer allocator.free(url);
 
-    const html = try fetch(allocator, url);
+    const html = try fetch(allocator, io, url);
     defer allocator.free(html);
 
     return extractResults(allocator, html);
 }
 
-fn fetch(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
-    var client = std.http.Client{ .allocator = allocator };
+fn fetch(allocator: std.mem.Allocator, io: std.Io, url: []const u8) ![]u8 {
+    var client = std.http.Client{ .allocator = allocator, .io = io };
     defer client.deinit();
 
     var aw = std.Io.Writer.Allocating.init(allocator);
